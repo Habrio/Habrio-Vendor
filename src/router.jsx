@@ -9,15 +9,15 @@ import VendorProfileSetup from './pages/VendorProfileSetup.jsx';
 import CreateShop from './pages/CreateShop.jsx';
 import VendorHome from './pages/VendorHome.jsx';
 import Orders from './pages/Orders.jsx';
-import OrderDetail from './OrderDetail.jsx';
+import OrderDetail from './pages/OrderDetail.jsx';
 import Chat from './pages/Chat.jsx';
 import Items from './pages/Items.jsx';
 import AddItem from './pages/AddItem.jsx';
 import EditItem from './pages/EditItem.jsx';
-import Wallet from './Wallet.jsx';
-import WalletHistory from './WalletHistory.jsx';
+import Wallet from './pages/Wallet.jsx';
+import WalletHistory from './pages/WalletHistory.jsx';
 import VendorProfile from './pages/VendorProfile.jsx';
-import Support from './Support.jsx';
+import Support from './pages/Support.jsx';
 import Analytics from './pages/Analytics.jsx';
 
 export default function Router() {
