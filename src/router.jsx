@@ -1,52 +1,75 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+// src/router.jsx
+import { Routes, Route, Navigate } from 'react-router-dom';
+import MobileLayout from './components/MobileLayout';
+import BottomNav from './components/BottomNav';
 
-// Import all vendor components
-import VendorTitleScreen from './pages/VendorTitleScreen.jsx';
-import VendorLogin from './pages/VendorLogin.jsx';
-import VendorOtp from './pages/VendorOtp.jsx';
-import VendorBasicOnboard from './pages/VendorBasicOnboard.jsx';
-import VendorProfileSetup from './pages/VendorProfileSetup.jsx';
-import CreateShop from './pages/CreateShop.jsx';
-import VendorHome from './pages/VendorHome.jsx';
-import Orders from './pages/Orders.jsx';
-import OrderDetail from './pages/OrderDetail.jsx';
-import Chat from './pages/Chat.jsx';
-import Items from './pages/Items.jsx';
-import AddItem from './pages/AddItem.jsx';
-import EditItem from './pages/EditItem.jsx';
-import Wallet from './pages/Wallet.jsx';
-import WalletHistory from './pages/WalletHistory.jsx';
-import VendorProfile from './pages/VendorProfile.jsx';
-import Support from './pages/Support.jsx';
-import Analytics from './pages/Analytics.jsx';
+// Auth & Onboarding (no layout)
+import VendorTitleScreen from './pages/VendorTitleScreen';
+import VendorLogin from './pages/VendorLogin';
+import VendorOtp from './pages/VendorOtp';
+import VendorBasicOnboard from './pages/VendorBasicOnboard';
+import VendorProfileSetup from './pages/VendorProfileSetup';
+import CreateShop from './pages/CreateShop';
 
-export default function Router() {
+// Main App Pages
+import VendorHome from './pages/VendorHome';
+import VendorProfile from './pages/VendorProfile';
+import Items from './pages/Items';
+import AddItem from './pages/AddItem';
+import EditItem from './pages/EditItem';
+import BulkUpload from './pages/BulkUpload';
+import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
+import Chat from './pages/Chat';
+import Wallet from './pages/Wallet';
+import WalletHistory from './pages/WalletHistory';
+import WalletWithdraw from './pages/WalletWithdraw';
+import PayoutSetup from './pages/PayoutSetup';
+import Support from './pages/Support';
+import Analytics from './pages/Analytics';
+
+// Utility layout wrapper with optional bottom nav
+function PageWithLayout({ element, withNav = false }) {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Vendor Routes */}
-        <Route path="/vendor" element={<VendorTitleScreen />} />
-        <Route path="/vendor/login" element={<VendorLogin />} />
-        <Route path="/vendor/otp" element={<VendorOtp />} />
-        <Route path="/vendor/onboarding/basic" element={<VendorBasicOnboard />} />
-        <Route path="/vendor/onboarding/profile" element={<VendorProfileSetup />} />
-        <Route path="/vendor/create-shop" element={<CreateShop />} />
-        <Route path="/vendor/home" element={<VendorHome />} />
-        <Route path="/vendor/orders" element={<Orders />} />
-        <Route path="/vendor/order/:id" element={<OrderDetail />} />
-        <Route path="/vendor/order/:id/chat" element={<Chat />} />
-        <Route path="/vendor/items" element={<Items />} />
-        <Route path="/vendor/items/add" element={<AddItem />} />
-        <Route path="/vendor/items/:id/edit" element={<EditItem />} />
-        <Route path="/vendor/wallet" element={<Wallet />} />
-        <Route path="/vendor/wallet/history" element={<WalletHistory />} />
-        <Route path="/vendor/profile" element={<VendorProfile />} />
-        <Route path="/vendor/support" element={<Support />} />
-        <Route path="/vendor/analytics" element={<Analytics />} />
+    <MobileLayout>
+      {element}
+      {withNav && <BottomNav />}
+    </MobileLayout>
+  );
+}
 
-        {/* Default redirect */}
-        <Route path="*" element={<Navigate to="/vendor" replace />} />
-      </Routes>
-    </BrowserRouter>
+export default function AppRoutes() {
+  return (
+    <Routes>
+      {/* Auth & Onboarding Routes (no layout) */}
+      <Route path="/" element={<VendorTitleScreen />} />
+      <Route path="/login" element={<VendorLogin />} />
+      <Route path="/otp" element={<VendorOtp />} />
+      <Route path="/onboarding/basic" element={<VendorBasicOnboard />} />
+      <Route path="/onboarding/profile" element={<VendorProfileSetup />} />
+      <Route path="/create-shop" element={<CreateShop />} />
+
+      {/* Main Routes WITH bottom nav */}
+      <Route path="/home" element={<PageWithLayout element={<VendorHome />} withNav />} />
+      <Route path="/items" element={<PageWithLayout element={<Items />} withNav />} />
+      <Route path="/orders" element={<PageWithLayout element={<Orders />} withNav />} />
+      <Route path="/profile" element={<PageWithLayout element={<VendorProfile />} withNav />} />
+      <Route path="/wallet" element={<PageWithLayout element={<Wallet />} withNav />} />
+
+      {/* Routes WITHOUT bottom nav */}
+      <Route path="/items/add" element={<PageWithLayout element={<AddItem />} />} />
+      <Route path="/items/:id/edit" element={<PageWithLayout element={<EditItem />} />} />
+      <Route path="/items/bulk-upload" element={<PageWithLayout element={<BulkUpload />} />} />
+      <Route path="/order/:id" element={<PageWithLayout element={<OrderDetail />} />} />
+      <Route path="/order/:id/chat" element={<PageWithLayout element={<Chat />} />} />
+      <Route path="/wallet/history" element={<PageWithLayout element={<WalletHistory />} />} />
+      <Route path="/wallet/withdraw" element={<PageWithLayout element={<WalletWithdraw />} />} />
+      <Route path="/payout-setup" element={<PageWithLayout element={<PayoutSetup />} />} />
+      <Route path="/analytics" element={<PageWithLayout element={<Analytics />} />} />
+      <Route path="/support" element={<PageWithLayout element={<Support />} />} />
+
+      {/* Fallback Route */}
+      <Route path="*" element={<Navigate to="/home" replace />} />
+    </Routes>
   );
 }

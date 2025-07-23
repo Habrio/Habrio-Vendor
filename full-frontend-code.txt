@@ -21,6 +21,79 @@ function App() {
 
 export default App;
 
+===== FILE: src/components/BottomNav.jsx =====
+
+// src/components/BottomNav.jsx
+import { useNavigate, useLocation } from 'react-router-dom';
+
+export default function BottomNav() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const navItems = [
+    { icon: '🏠', label: 'Home', path: '/home' },
+    { icon: '🏪', label: 'Shop', path: '/shop' },
+    { icon: '📦', label: 'Items', path: '/items' },
+    { icon: '📋', label: 'Orders', path: '/orders' },
+    { icon: '👤', label: 'Profile', path: '/profile' },
+  ];
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        width: '100%',
+        maxWidth: '375px',
+        background: 'white',
+        borderTop: '1px solid var(--divider)',
+        display: 'flex',
+        justifyContent: 'space-around',
+        padding: '12px 0',
+        zIndex: 1000
+      }}
+    >
+      {navItems.map(item => (
+        <button
+          key={item.path}
+          onClick={() => navigate(item.path)}
+          style={{
+            background: 'none',
+            border: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '12px',
+            color:
+              location.pathname === item.path
+                ? 'var(--primary-color)'
+                : 'var(--text-secondary)',
+            cursor: 'pointer'
+          }}
+        >
+          <span style={{ fontSize: '20px' }}>{item.icon}</span>
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+===== FILE: src/components/MobileLayout.jsx =====
+
+// src/components/MobileLayout.jsx
+export default function MobileLayout({ children }) {
+  return (
+    <div className="mobile-screen fade-in">
+      <div className="screen-container">
+        {children}
+      </div>
+    </div>
+  );
+}
 
 ===== FILE: src/main.jsx =====
 
@@ -36,1097 +109,563 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   </React.StrictMode>
 );
 
+===== FILE: src/pages/AddItem.jsx =====
 
-===== FILE: src/pages/BasicOnboarding.jsx =====
+import { useState } from 'react'; import { useNavigate } from 'react-router-dom';
+import '../styles/common.css'; import '../styles/App.css';
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import '../styles/common.css';
-import '../styles/App.css';
-
-export default function BasicOnboarding() {
-  const navigate = useNavigate();
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-  const [data, setData] = useState({
-    name: '', city: '', society: ''
-  });
-
-  const handleChange = e => {
-    setData(prev => ({ ...prev, [e.target.name]: e.target.value.trimStart() }));
+export default function AddItem(){
+  const nav=useNavigate(); const backend=import.meta.env.VITE_BACKEND_URL; const tok=localStorage.getItem('auth_token');
+  const [item,setItem]=useState({title:'',price:'',quantity_in_stock:0,unit:'pcs'});
+  const save=async()=>{
+    if(!item.title||!item.price)return alert('Title & price');
+    const res=await fetch(`${backend}/item/add`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':tok},body:JSON.stringify(item)}).then(r=>r.json());
+    if(res.status==='success') nav('/vendor/items'); else alert(res.message);
   };
-
-  const submit = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      alert('Missing login token. Please login again.');
-      return;
-    }
-
-    const { name, city, society } = data;
-    if (!name || !city || !society) {
-      alert('All fields are required');
-      return;
-    }
-
-    try {
-      const res = await fetch(`${backendUrl}/onboarding/basic`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          city: city.trim(),
-          society: society.trim(),
-          role: 'consumer'
-        })
-      });
-
-      const result = await res.json();
-      if (result.status === 'success') {
-        navigate('/onboarding/consumer');
-      } else {
-        alert(result.message || 'Onboarding failed');
-      }
-    } catch (err) {
-      console.error('Error:', err);
-      alert('Something went wrong. Please try again.');
-    }
-  };
-
-  return (
-    <div className="mobile-screen fade-in">
-      <div className="status-bar">
-        <span className="time">9:41</span>
-        <span className="battery">🔋</span>
-      </div>
-      <div className="screen-content">
-        <h2 className="title text-center mb-lg">Tell us about yourself</h2>
-
-        <div className="form-group">
-          <label className="form-label">Full Name</label>
-          <input
-            name="name"
-            className="form-input"
-            placeholder="Ashish Dabas"
-            value={data.name}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">City</label>
-          <input
-            name="city"
-            className="form-input"
-            placeholder="Noida"
-            value={data.city}
-            onChange={handleChange}
-          />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Society</label>
-          <input
-            name="society"
-            className="form-input"
-            placeholder="Hyde Park"
-            value={data.society}
-            onChange={handleChange}
-          />
-        </div>
-
-        <button
-          className="btn btn-primary btn-full btn-large"
-          onClick={submit}
-        >
-          Complete
-        </button>
-      </div>
-    </div>
-  );
+  return(<div className="screen-content">
+    <h2 className="title text-center mb-lg">Add Item</h2>
+    {['title','price','quantity_in_stock','unit'].map(f=>(
+      <div className="form-group" key={f}><label className="form-label">{f.replace('_',' ').toUpperCase()}</label>
+        <input className="form-input" value={item[f]} onChange={e=>setItem({...item,[f]:e.target.value})}/></div>
+    ))}
+    <button className="btn btn-primary btn-full" onClick={save}>Save</button>
+  </div>);
 }
 
+===== FILE: src/pages/Analytics.jsx =====
 
-===== FILE: src/pages/ConsumerOnboarding.jsx =====
+import '../styles/common.css'; import '../styles/App.css';
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import '../styles/common.css';
-import '../styles/App.css';
-
-export default function ConsumerOnboarding() {
-  const navigate = useNavigate();
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
-  const [flatNumber, setFlatNumber] = useState('');
-
-  const submit = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) return alert('Missing login token. Please login again.');
-
-    if (!flatNumber.trim()) {
-      alert('Please enter your flat or house number');
-      return;
-    }
-
-    try {
-      const res = await fetch(`${backendUrl}/onboarding/consumer`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization':  token
-        },
-        body: JSON.stringify({ flat_number: flatNumber.trim() })
-      });
-
-      const result = await res.json();
-      if (result.status === 'success') {
-        navigate('/home');
-      } else {
-        alert(result.message || 'Consumer onboarding failed');
-      }
-    } catch (err) {
-      console.error('Error submitting consumer onboarding:', err);
-      alert('Something went wrong. Please try again.');
-    }
-  };
-
-  return (
-    <div className="mobile-screen fade-in">
-      <div className="status-bar">
-        <span className="time">9:41</span>
-        <span className="battery">🔋</span>
-      </div>
-      <div className="screen-content">
-        <h2 className="title text-center mb-lg">Your Home Address</h2>
-
-        <div className="form-group">
-          <label className="form-label">Flat / House Number</label>
-          <input
-            className="form-input"
-            placeholder="e.g., A-302"
-            value={flatNumber}
-            onChange={(e) => setFlatNumber(e.target.value.trimStart())}
-          />
-        </div>
-
-        <button
-          className="btn btn-primary btn-full btn-large"
-          onClick={submit}
-        >
-          Complete
-        </button>
-      </div>
-    </div>
-  );
+export default function Analytics(){
+  return(<div className="screen-content">
+    <h2 className="title mb-lg">Analytics</h2>
+    <p>Advanced analytics coming soon 🚧</p>
+  </div>);
 }
 
+===== FILE: src/pages/Chat.jsx =====
 
-===== FILE: src/pages/Home.jsx =====
+import { useEffect,useState } from 'react'; import { useParams } from 'react-router-dom';
+import '../styles/common.css'; import '../styles/App.css';
 
-// src/pages/Home.jsx
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import '../styles/common.css';
-import '../styles/App.css';
+export default function Chat(){
+  const {id}=useParams(); const [msgs,setMsgs]=useState([]); const [text,setText]=useState('');
+  const backend=import.meta.env.VITE_BACKEND_URL; const tok=localStorage.getItem('auth_token');
 
-function Home() {
-  const navigate = useNavigate();
-  const [userProfile, setUserProfile] = useState(null);
-  const [nearbyShops, setNearbyShops] = useState([]);
-  const [featuredShops, setFeaturedShops] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [walletBalance, setWalletBalance] = useState(0);
-
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
-  const token = localStorage.getItem('auth_token');
-
-  useEffect(() => {
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-    fetchUserData();
-    fetchNearbyShops();
-    fetchWalletBalance();
-  }, []);
-
-  const fetchUserData = async () => {
-    try {
-      const res = await fetch(`${backendUrl}/profile/me`, {
-        headers: { 'Authorization': token }
-      });
-      const data = await res.json();
-      if (data.status === 'success') {
-        setUserProfile(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    }
+  const load=()=>fetch(`${backend}/order/vendor/messages/${id}`,{headers:{Authorization:tok}}).then(r=>r.json()).then(d=>setMsgs(d.messages||[]));
+  useEffect(()=>{load();},[]);
+  const send=async()=>{
+    if(!text.trim())return;
+    const res=await fetch(`${backend}/order/vendor/message/send/${id}`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':tok},body:JSON.stringify({message:text.trim()})}).then(r=>r.json());
+    if(res.status==='success'){setText('');load();} else alert(res.message);
   };
 
-  const fetchNearbyShops = async () => {
-    try {
-      const res = await fetch(`${backendUrl}/shops?status=open`, {
-        headers: { 'Authorization': token }
-      });
-      const data = await res.json();
-      if (data.status === 'success') {
-        setNearbyShops(data.shops.slice(0, 6));
-        setFeaturedShops(data.shops.filter(shop => shop.featured).slice(0, 3));
-      }
-    } catch (error) {
-      console.error('Error fetching shops:', error);
-    }
-    setLoading(false);
+  return(<div className="screen-content">
+    <h2 style={{fontSize:20,fontWeight:600,marginBottom:16}}>Chat</h2>
+    <div style={{flex:1,overflowY:'auto',marginBottom:56}}>
+      {msgs.map(m=>(
+        <div key={m.id} style={{marginBottom:8,textAlign:m.sender_phone===tok?'right':'left'}}>
+          <span style={{display:'inline-block',padding:'8px 12px',borderRadius:16,background:m.sender_phone===tok?'var(--primary-gradient)':'var(--background-soft)',color:m.sender_phone===tok?'#fff':'inherit'}}>{m.message}</span>
+        </div>
+      ))}
+    </div>
+    <div style={{position:'fixed',bottom:0,left:0,right:0,display:'flex',padding:12,background:'#fff',borderTop:'1px solid var(--divider)'}}>
+      <input style={{flex:1,border:'1px solid var(--divider)',borderRadius:20,padding:'8px 12px'}} value={text} onChange={e=>setText(e.target.value)}/>
+      <button className="btn btn-primary" style={{marginLeft:8}} onClick={send}>Send</button>
+    </div>
+  </div>);
+}
+
+===== FILE: src/pages/CreateShop.jsx =====
+
+import { useState } from 'react'; import { useNavigate } from 'react-router-dom';
+import '../styles/common.css'; import '../styles/App.css';
+
+export default function CreateShop(){
+  const [shop,setShop]=useState({shop_name:'',shop_type:'grocery',description:'',delivers:true,is_open:true});
+  const backend=import.meta.env.VITE_BACKEND_URL; const token=localStorage.getItem('auth_token'); const nav=useNavigate();
+
+  const create=async()=>{
+    if(!shop.shop_name){alert('Shop name');return;}
+    const res=await fetch(`${backend}/vendor/create-shop`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':token},body:JSON.stringify(shop)});
+    const d=await res.json(); if(d.status==='success') nav('/vendor/home'); else alert(d.message);
   };
 
-  const fetchWalletBalance = async () => {
-    try {
-      const res = await fetch(`${backendUrl}/wallet`, {
-        headers: { 'Authorization': token }
-      });
-      const data = await res.json();
-      if (data.status === 'success') {
-        setWalletBalance(data.balance);
-      }
-    } catch (error) {
-      console.error('Error fetching wallet:', error);
-    }
+  return(<div className="mobile-screen fade-in">
+    <div className="status-bar"><span className="time">9:41</span><span className="battery">🔋</span></div>
+    <div className="screen-content"><h2 className="title text-center mb-lg">Create Shop</h2>
+      {['shop_name','shop_type','description'].map(f=>(
+        <div className="form-group" key={f}><label className="form-label">{f.replace('_',' ').toUpperCase()}</label>
+          <input className="form-input" value={shop[f]} onChange={e=>setShop({...shop,[f]:e.target.value})}/></div>
+      ))}
+      <div className="form-group"><label className="form-label">Delivers?</label>
+        <input type="checkbox" checked={shop.delivers} onChange={e=>setShop({...shop,delivers:e.target.checked})}/></div>
+      <button className="btn btn-primary btn-full btn-large" onClick={create}>Create</button>
+    </div></div>);
+}
+
+===== FILE: src/pages/EditItem.jsx =====
+
+import { useEffect,useState } from 'react'; import { useNavigate,useParams } from 'react-router-dom';
+import '../styles/common.css'; import '../styles/App.css';
+
+export default function EditItem(){
+  const {id}=useParams(); const nav=useNavigate(); const backend=import.meta.env.VITE_BACKEND_URL; const tok=localStorage.getItem('auth_token');
+  const [item,setItem]=useState(null);
+
+  useEffect(()=>{fetch(`${backend}/item/my`,{headers:{Authorization:tok}}).then(r=>r.json()).then(d=>setItem(d.data.find(i=>i.id==id)));},[]);
+  const update=async()=>{
+    const res=await fetch(`${backend}/item/update/${id}`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':tok},body:JSON.stringify(item)}).then(r=>r.json());
+    if(res.status==='success') nav('/vendor/items'); else alert(res.message);
+  };
+  if(!item)return <div className="screen-content"><p>Loading...</p></div>;
+  return(<div className="screen-content">
+    <h2 className="title text-center mb-lg">Edit Item</h2>
+    {['title','price','quantity_in_stock','unit'].map(f=>(
+      <div className="form-group" key={f}><label className="form-label">{f.replace('_',' ').toUpperCase()}</label>
+        <input className="form-input" value={item[f]} onChange={e=>setItem({...item,[f]:e.target.value})}/></div>
+    ))}
+    <button className="btn btn-primary btn-full" onClick={update}>Update</button>
+  </div>);
+}
+
+===== FILE: src/pages/Items.jsx =====
+
+import { useEffect,useState } from 'react'; import { useNavigate } from 'react-router-dom';
+import '../styles/common.css'; import '../styles/App.css';
+
+export default function Items(){
+  const [items,setItems]=useState([]); const nav=useNavigate();
+  const backend=import.meta.env.VITE_BACKEND_URL; const tok=localStorage.getItem('auth_token');
+  useEffect(()=>{fetch(`${backend}/item/my`,{headers:{Authorization:tok}}).then(r=>r.json()).then(d=>setItems(d.data||[]));},[]);
+  return(<div className="screen-content">
+    <h2 style={{fontSize:20,fontWeight:600,marginBottom:16}}>My Items</h2>
+    <button className="btn btn-primary btn-full mb-md" onClick={()=>nav('/vendor/items/add')}>Add Item +</button>
+    {items.length===0?<p>No items.</p>:items.map(it=>(
+      <div key={it.id} onClick={()=>nav(`/vendor/items/${it.id}/edit`)} style={{border:'1px solid var(--divider)',borderRadius:8,padding:12,marginBottom:12,cursor:'pointer',display:'flex',justifyContent:'space-between'}}>
+        <div><p style={{margin:'0 0 4px',fontWeight:600}}>{it.title}</p><p style={{margin:0,fontSize:12,color:'var(--text-secondary)'}}>₹{it.price} • Stock {it.quantity_in_stock}</p></div>
+        <span style={{fontSize:16,color:'var(--text-secondary)'}}>→</span>
+      </div>
+    ))}
+  </div>);
+}
+
+===== FILE: src/pages/OrderDetail.jsx =====
+
+import { useEffect,useState } from 'react'; import { useNavigate, useParams } from 'react-router-dom';
+import '../styles/common.css'; import '../styles/App.css';
+
+export default function OrderDetail(){
+  const {id}=useParams(); const [order,setOrder]=useState(null); const nav=useNavigate();
+  const backend=import.meta.env.VITE_BACKEND_URL; const tok=localStorage.getItem('auth_token');
+
+  const fetchData=()=>fetch(`${backend}/order/vendor/messages/${id}`,{headers:{Authorization:tok}}).then(r=>r.json());
+  useEffect(()=>{fetch(`${backend}/order/vendor`,{headers:{Authorization:tok}}).then(r=>r.json()).then(d=>setOrder(d.orders.find(o=>o.order_id==id)));},[]);
+  const updateStatus=async status=>{
+    const res=await fetch(`${backend}/order/vendor/status/${id}`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':tok},body:JSON.stringify({status})}).then(r=>r.json());
+    if(res.status==='success') setOrder({...order,status}); else alert(res.message);
   };
 
-  const shopCategories = [
-    { name: 'Grocery', icon: '🛒', type: 'grocery' },
-    { name: 'Pharmacy', icon: '💊', type: 'pharmacy' },
-    { name: 'Restaurant', icon: '🍽️', type: 'restaurant' },
-    { name: 'Electronics', icon: '📱', type: 'electronics' },
-    { name: 'Fashion', icon: '👕', type: 'fashion' },
-    { name: 'Services', icon: '🔧', type: 'services' }
-  ];
+  if(!order) return <div className="screen-content"><p>Loading...</p></div>;
+  return(<div className="screen-content">
+    <h2 style={{fontSize:20,fontWeight:600,marginBottom:16}}>Order #{order.order_id}</h2>
+    <p style={{margin:'0 0 12px'}}>Status: <b>{order.status}</b></p>
+    <h3 style={{fontSize:16,fontWeight:600,marginBottom:8}}>Items</h3>
+    {order.items.map((it,i)=>(
+      <div key={i} style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+        <span>{it.name} x{it.quantity}</span><span>₹{it.subtotal}</span>
+      </div>
+    ))}
+    <p style={{textAlign:'right',fontWeight:600,marginTop:8}}>Total: ₹{order.final_amount}</p>
+    <div style={{display:'flex',gap:12,marginTop:24}}>
+      {order.status==='pending'&&<button className="btn btn-primary flex-1" onClick={()=>updateStatus('accepted')}>Accept</button>}
+      {order.status!=='delivered'&&<button className="btn flex-1" onClick={()=>updateStatus('delivered')}>Mark Delivered</button>}
+    </div>
+    <button className="btn-secondary btn-full mt-md" onClick={()=>nav(`/vendor/order/${id}/chat`)}>Open Chat 💬</button>
+  </div>);
+}
 
-  if (loading) {
-    return (
+===== FILE: src/pages/Orders.jsx =====
+
+import { useEffect,useState } from 'react'; import { useNavigate } from 'react-router-dom';
+import '../styles/common.css'; import '../styles/App.css';
+
+export default function Orders(){
+  const [orders,setOrders]=useState([]); const [loading,setLoading]=useState(true); const nav=useNavigate();
+  const backend=import.meta.env.VITE_BACKEND_URL; const tok=localStorage.getItem('auth_token');
+
+  useEffect(()=>{fetch(`${backend}/order/vendor`,{headers:{Authorization:tok}}).then(r=>r.json()).then(d=>{setOrders(d.orders||[]);setLoading(false);});},[]);
+  if(loading) return <div className="screen-content"><p>Loading...</p></div>;
+  return(<div className="screen-content"><h2 style={{fontSize:20,fontWeight:600,marginBottom:16}}>All Orders</h2>
+    {orders.length===0?<p>No orders yet.</p>:orders.map(o=>(
+      <div key={o.order_id} onClick={()=>nav(`/vendor/order/${o.order_id}`)} style={{border:'1px solid var(--divider)',borderRadius:8,padding:12,marginBottom:12,cursor:'pointer'}}>
+        <p style={{margin:'0 0 4px',fontWeight:600}}>Order #{o.order_id} • {o.status}</p>
+        <p style={{margin:0,fontSize:12,color:'var(--text-secondary)'}}>₹{o.final_amount} • {new Date(o.created_at).toLocaleString()}</p>
+      </div>
+    ))}
+  </div>);
+}
+
+===== FILE: src/pages/Support.jsx =====
+
+import '../styles/common.css'; import '../styles/App.css';
+
+export default function Support(){
+  return(<div className="screen-content">
+    <h2 className="title mb-lg">Help & Support</h2>
+    <p>📧 support@habrio.app</p>
+    <p>📞 +91-99999-99999</p>
+    <p className="subtitle">We respond within 24 hours.</p>
+  </div>);
+}
+
+===== FILE: src/pages/VendorBasicOnboard.jsx =====
+
+import { useState } from 'react'; import { useNavigate } from 'react-router-dom';
+import '../styles/common.css'; import '../styles/App.css';
+
+export default function VendorBasicOnboarding(){
+  const [form,setForm]=useState({name:'',city:'',society:''}); const nav=useNavigate();
+  const backend=import.meta.env.VITE_BACKEND_URL; const token=localStorage.getItem('auth_token');
+
+  const submit=async()=>{
+    const {name,city,society}=form;
+    if(!name||!city||!society)return alert('Fill all');
+    const res=await fetch(`${backend}/onboarding/basic`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':token},body:JSON.stringify({...form,role:'vendor'})});
+    const d=await res.json(); if(d.status==='success') nav('/vendor/onboarding/profile'); else alert(d.message);
+  };
+
+  return(
+    <div className="mobile-screen fade-in">
+      <div className="status-bar"><span className="time">9:41</span><span className="battery">🔋</span></div>
       <div className="screen-content">
-        <div style={{ textAlign: 'center', marginTop: '40px' }}>
-          <div style={{ 
-            width: '40px', 
-            height: '40px', 
-            border: '3px solid var(--divider)', 
-            borderTop: '3px solid var(--primary-color)', 
-            borderRadius: '50%', 
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 20px'
-          }}></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="screen-content">
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>
-            Hello, {userProfile?.name || 'User'}! 👋
-          </h2>
-          <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)', fontSize: '14px' }}>
-            {userProfile?.society}, {userProfile?.city}
-          </p>
-        </div>
-        <button 
-          onClick={() => navigate('/profile')}
-          style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '20px',
-            background: 'var(--primary-gradient)',
-            border: 'none',
-            color: 'white',
-            fontSize: '18px',
-            cursor: 'pointer'
-          }}
-        >
-          👤
-        </button>
-      </div>
-
-      {/* Wallet Card */}
-      <div 
-        onClick={() => navigate('/wallet')}
-        style={{
-          background: 'var(--primary-gradient)',
-          borderRadius: '12px',
-          padding: '20px',
-          marginBottom: '24px',
-          color: 'white',
-          cursor: 'pointer'
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>Wallet Balance</p>
-            <h3 style={{ margin: '4px 0 0 0', fontSize: '24px', fontWeight: '600' }}>
-              ₹{walletBalance.toFixed(2)}
-            </h3>
+        <h2 className="title text-center mb-lg">Your Details</h2>
+        {['name','city','society'].map(f=>(
+          <div className="form-group" key={f}>
+            <label className="form-label">{f.charAt(0).toUpperCase()+f.slice(1)}</label>
+            <input className="form-input" value={form[f]} onChange={e=>setForm({...form,[f]:e.target.value})}/>
           </div>
-          <div style={{ fontSize: '24px' }}>💳</div>
-        </div>
+        ))}
+        <button className="btn btn-primary btn-full btn-large" onClick={submit}>Continue</button>
+      </div>
+    </div>
+  );
+}
+
+===== FILE: src/pages/VendorHome.jsx =====
+
+import { useEffect,useState } from 'react'; import { useNavigate } from 'react-router-dom';
+import '../styles/common.css'; import '../styles/App.css';
+
+export default function VendorHome(){
+  const [shop,setShop]=useState(null); const [orders,setOrders]=useState([]); const [wallet,setWallet]=useState(0);
+  const nav=useNavigate(); const backend=import.meta.env.VITE_BACKEND_URL; const tok=localStorage.getItem('auth_token');
+
+  useEffect(()=>{load();},[]);
+  const load=async()=>{
+    const s=await fetch(`${backend}/shop/my`,{headers:{Authorization:tok}}).then(r=>r.json());
+    if(s.status==='success') setShop(s.data);
+    const o=await fetch(`${backend}/order/vendor`,{headers:{Authorization:tok}}).then(r=>r.json());
+    if(o.status==='success') setOrders(o.orders.slice(0,3));
+    const w=await fetch(`${backend}/vendor/wallet`,{headers:{Authorization:tok}}).then(r=>r.json());
+    if(w.status==='success') setWallet(w.balance);
+  };
+
+  if(!shop) return <div className="screen-content"><p>Loading...</p></div>;
+
+  return(
+    <div className="screen-content">
+      <h2 style={{fontSize:20,fontWeight:600,margin:'0 0 8px'}}>👋 {shop.shop_name}</h2>
+      <p style={{color:'var(--text-secondary)',margin:'0 0 24px'}}>{shop.shop_type} • {shop.society}</p>
+
+      {/* Wallet card */}
+      <div onClick={()=>nav('/vendor/wallet')} style={{background:'var(--primary-gradient)',borderRadius:12,padding:20,color:'#fff',marginBottom:24,cursor:'pointer'}}>
+        <p style={{margin:0,opacity:.9,fontSize:14}}>Wallet Balance</p>
+        <h3 style={{margin:'4px 0 0',fontSize:24}}>₹{wallet.toFixed(2)}</h3>
       </div>
 
-      {/* Search Bar */}
-      <div 
-        onClick={() => navigate('/shops/search')}
-        style={{
-          background: 'var(--background-soft)',
-          border: '1px solid var(--divider)',
-          borderRadius: '8px',
-          padding: '12px 16px',
-          marginBottom: '24px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}
-      >
-        <span style={{ fontSize: '16px' }}>🔍</span>
-        <span style={{ color: 'var(--text-secondary)' }}>Search for shops, items...</span>
+      {/* Quick Links */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12,marginBottom:24}}>
+        {[
+          {icon:'📦',label:'Orders',path:'/vendor/orders'},
+          {icon:'🛒',label:'Items',path:'/vendor/items'},
+          {icon:'💰',label:'Wallet',path:'/vendor/wallet'},
+          {icon:'📈',label:'Analytics',path:'/vendor/analytics'},
+          {icon:'👤',label:'Profile',path:'/vendor/profile'},
+          {icon:'❓',label:'Support',path:'/vendor/support'},
+        ].map(x=>(
+          <div key={x.label} onClick={()=>nav(x.path)} style={{background:'var(--background-soft)',border:'1px solid var(--divider)',borderRadius:8,padding:'16px 8px',textAlign:'center',cursor:'pointer'}}>
+            <div style={{fontSize:24,marginBottom:8}}>{x.icon}</div><p style={{margin:0,fontSize:12,fontWeight:500}}>{x.label}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Categories */}
-      <div style={{ marginBottom: '24px' }}>
-        <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>Categories</h3>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '12px'
-        }}>
-          {shopCategories.map((category, index) => (
-            <div
-              key={index}
-              onClick={() => navigate(`/shops?type=${category.type}`)}
-              style={{
-                background: 'var(--background-soft)',
-                border: '1px solid var(--divider)',
-                borderRadius: '8px',
-                padding: '16px 8px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              <div style={{ fontSize: '24px', marginBottom: '8px' }}>{category.icon}</div>
-              <p style={{ margin: 0, fontSize: '12px', fontWeight: '500' }}>{category.name}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Featured Shops */}
-      {featuredShops.length > 0 && (
-        <div style={{ marginBottom: '24px' }}>
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>Featured Shops</h3>
-          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto' }}>
-            {featuredShops.map((shop) => (
-              <div
-                key={shop.id}
-                onClick={() => navigate(`/shop/${shop.id}`)}
-                style={{
-                  background: 'var(--background-soft)',
-                  border: '1px solid var(--divider)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  minWidth: '140px',
-                  cursor: 'pointer'
-                }}
-              >
-                <div style={{ 
-                  width: '40px', 
-                  height: '40px', 
-                  background: 'var(--primary-gradient)', 
-                  borderRadius: '20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '8px',
-                  fontSize: '18px'
-                }}>
-                  🏪
-                </div>
-                <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '600' }}>
-                  {shop.shop_name}
-                </h4>
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  {shop.shop_type}
-                </p>
-                <div style={{ 
-                  marginTop: '8px', 
-                  fontSize: '10px', 
-                  color: 'var(--success-color)',
-                  fontWeight: '500'
-                }}>
-                  {shop.is_open ? '• Open' : '• Closed'}
-                </div>
+      {orders.length>0 && (
+        <>
+          <h3 style={{fontSize:18,fontWeight:600,margin:'0 0 12px'}}>Recent Orders</h3>
+          <div style={{display:'flex',flexDirection:'column',gap:12}}>
+            {orders.map(o=>(
+              <div key={o.order_id} onClick={()=>nav(`/vendor/order/${o.order_id}`)} style={{border:'1px solid var(--divider)',borderRadius:8,padding:12,cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div><p style={{margin:'0 0 4px',fontWeight:600}}>Order #{o.order_id}</p><p style={{margin:0,fontSize:12,color:'var(--text-secondary)'}}>₹{o.final_amount} • {o.status}</p></div>
+                <span style={{fontSize:16,color:'var(--text-secondary)'}}>→</span>
               </div>
             ))}
           </div>
-        </div>
+        </>
       )}
-
-      {/* Nearby Shops */}
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Nearby Shops</h3>
-          <button 
-            onClick={() => navigate('/shops')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--primary-color)',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}
-          >
-            View All
-          </button>
-        </div>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {nearbyShops.map((shop) => (
-            <div
-              key={shop.id}
-              onClick={() => navigate(`/shop/${shop.id}`)}
-              style={{
-                background: 'var(--background-soft)',
-                border: '1px solid var(--divider)',
-                borderRadius: '8px',
-                padding: '16px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-              }}
-            >
-              <div style={{ 
-                width: '48px', 
-                height: '48px', 
-                background: 'var(--primary-gradient)', 
-                borderRadius: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '20px'
-              }}>
-                🏪
-              </div>
-              <div style={{ flex: 1 }}>
-                <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600' }}>
-                  {shop.shop_name}
-                </h4>
-                <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: 'var(--text-secondary)' }}>
-                  {shop.shop_type} • {shop.description}
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ 
-                    fontSize: '12px', 
-                    color: shop.is_open ? 'var(--success-color)' : 'var(--error-color)',
-                    fontWeight: '500'
-                  }}>
-                    {shop.is_open ? '• Open' : '• Closed'}
-                  </span>
-                  {shop.delivers && (
-                    <span style={{ 
-                      fontSize: '12px', 
-                      color: 'var(--primary-color)',
-                      fontWeight: '500'
-                    }}>
-                      • Delivers
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>→</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Bottom Navigation Placeholder */}
-      <div style={{ height: '80px' }}></div>
-
-      {/* Bottom Navigation */}
-      <div style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        background: 'white',
-        borderTop: '1px solid var(--divider)',
-        display: 'flex',
-        justifyContent: 'space-around',
-        padding: '12px 0',
-        zIndex: 1000
-      }}>
-        <button 
-          onClick={() => navigate('/home')}
-          style={{
-            background: 'none',
-            border: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-            color: 'var(--primary-color)',
-            fontSize: '12px',
-            cursor: 'pointer'
-          }}
-        >
-          <span style={{ fontSize: '20px' }}>🏠</span>
-          Home
-        </button>
-        <button 
-          onClick={() => navigate('/shops')}
-          style={{
-            background: 'none',
-            border: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-            color: 'var(--text-secondary)',
-            fontSize: '12px',
-            cursor: 'pointer'
-          }}
-        >
-          <span style={{ fontSize: '20px' }}>🏪</span>
-          Shops
-        </button>
-        <button 
-          onClick={() => navigate('/cart')}
-          style={{
-            background: 'none',
-            border: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-            color: 'var(--text-secondary)',
-            fontSize: '12px',
-            cursor: 'pointer'
-          }}
-        >
-          <span style={{ fontSize: '20px' }}>🛒</span>
-          Cart
-        </button>
-        <button 
-          onClick={() => navigate('/orders')}
-          style={{
-            background: 'none',
-            border: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-            color: 'var(--text-secondary)',
-            fontSize: '12px',
-            cursor: 'pointer'
-          }}
-        >
-          <span style={{ fontSize: '20px' }}>📦</span>
-          Orders
-        </button>
-        <button 
-          onClick={() => navigate('/profile')}
-          style={{
-            background: 'none',
-            border: 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '4px',
-            color: 'var(--text-secondary)',
-            fontSize: '12px',
-            cursor: 'pointer'
-          }}
-        >
-          <span style={{ fontSize: '20px' }}>👤</span>
-          Profile
-        </button>
-      </div>
     </div>
   );
 }
 
-export default Home;
-
-===== FILE: src/pages/Login.jsx =====
+===== FILE: src/pages/VendorLogin.jsx =====
 
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/common.css';
 import '../styles/App.css';
 
-function Login() {
-  const [phone, setPhone] = useState('');
+export default function VendorLogin() {
+  const [phone,setPhone] = useState('');
   const navigate = useNavigate();
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backend = import.meta.env.VITE_BACKEND_URL;
 
-  const sendOtp = async () => {
-    if (!/^\d{10}$/.test(phone)) {
-      alert('Please enter a valid 10-digit phone number');
-      return;
-    }
-
-    try {
-      const res = await fetch(`${backendUrl}/send-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: '+91' + phone }),
-      });
-
-      const data = await res.json();
-      if (data.status === 'success') {
-        navigate('/otp', { state: { phone } });
-      } else {
-        alert('❌ ' + (data.message || 'Failed to send OTP'));
-      }
-    } catch (error) {
-      alert('Something went wrong while sending OTP');
-    }
+  const sendOtp = async ()=>{
+    if(!/^[0-9]{10}$/.test(phone)){alert('Enter 10-digit phone');return;}
+    const res = await fetch(`${backend}/send-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:'+91'+phone})});
+    const data = await res.json();
+    if(data.status==='success') navigate('/vendor/otp',{state:{phone}});
+    else alert(data.message||'Failed');
   };
 
   return (
     <div className="mobile-screen fade-in">
-      <div className="status-bar">
-        <span className="time">9:41</span>
-        <span className="battery">🔋</span>
-      </div>
-
+      <div className="status-bar"><span className="time">9:41</span><span className="battery">🔋</span></div>
       <div className="screen-content">
-        <div className="text-center mb-lg" style={{ paddingTop: '48px' }}>
-          <div
-            style={{
-              background: 'var(--primary-gradient)',
-              width: '80px',
-              height: '80px',
-              borderRadius: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 24px',
-              boxShadow: '0 8px 18px rgba(255, 145, 0, 0.35)',
-            }}
-          >
-            <span style={{ fontSize: '36px', color: 'white' }}>📲</span>
-          </div>
-
-          <h2 className="title" style={{ fontSize: '22px' }}>Log in to Habrio</h2>
-          <p className="subtitle">Enter your mobile number to continue</p>
-        </div>
-
+        <h2 className="title text-center mb-lg" style={{paddingTop:48}}>Vendor Login</h2>
         <div className="form-group mb-md">
-          <div className="phone-input-group">
-            <div className="country-code">+91</div>
-            <input
-              type="tel"
-              className="phone-input"
-              placeholder="9876543210"
-              maxLength="10"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
+          <div className="phone-input-group"><div className="country-code">+91</div>
+            <input type="tel" className="phone-input" placeholder="9876543210" maxLength="10" value={phone} onChange={e=>setPhone(e.target.value)}/>
           </div>
         </div>
-
-        <button className="btn btn-primary btn-full btn-large" onClick={sendOtp}>
-          Send OTP
-        </button>
-
-        <p
-          style={{
-            fontSize: '12px',
-            color: 'var(--text-secondary)',
-            textAlign: 'center',
-            lineHeight: '1.5',
-            marginTop: '24px',
-          }}
-        >
-          By continuing, you agree to our{' '}
-          <a href="#" className="link">Terms & Conditions</a> and{' '}
-          <a href="#" className="link">Privacy Policy</a>
-        </p>
+        <button className="btn btn-primary btn-full btn-large" onClick={sendOtp}>Send OTP</button>
       </div>
     </div>
   );
 }
 
-export default Login;
-
-
-===== FILE: src/pages/Otp.jsx =====
+===== FILE: src/pages/VendorOtp.jsx =====
 
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import '../styles/common.css';
-import '../styles/App.css';
+import { useLocation,useNavigate } from 'react-router-dom';
+import '../styles/common.css'; import '../styles/App.css';
 
-function Otp() {
-  const [otp, setOtp] = useState('');
-  const location = useLocation();
-  const navigate = useNavigate();
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
-  const phone = location.state?.phone || '9876543210';
+export default function VendorOtp(){
+  const [otp,setOtp]=useState(''); const {state}=useLocation(); const phone=state?.phone; const nav=useNavigate();
+  const backend=import.meta.env.VITE_BACKEND_URL;
 
-  const verifyOtp = async () => {
-    if (!/^\d{6}$/.test(otp)) {
-      alert('Enter a valid 6-digit OTP');
-      return;
-    }
-
-    try {
-      const res = await fetch(`${backendUrl}/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: '+91' + phone, otp }),
-      });
-
-      const data = await res.json();
-
-      if (data.status === 'success' && data.auth_token) {
-        localStorage.setItem('auth_token', data.auth_token);
-
-        // Use basic_onboarding_done directly from response
-        if (data.basic_onboarding_done) {
-          navigate('/home');
-        } else {
-          navigate('/onboarding/basic');
-        }
-      } else {
-        alert('❌ ' + (data.message || 'Incorrect OTP'));
-      }
-    } catch (error) {
-      alert('Something went wrong while verifying OTP');
-      console.error(error);
-    }
+  const verify=async()=>{
+    if(!/^[0-9]{6}$/.test(otp)){alert('Enter 6-digit');return;}
+    const res=await fetch(`${backend}/verify-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:'+91'+phone,otp})});
+    const data=await res.json();
+    if(data.status==='success'){localStorage.setItem('auth_token',data.auth_token);
+      data.basic_onboarding_done?nav('/vendor/home'):nav('/vendor/onboarding/basic');
+    }else alert(data.message||'Incorrect OTP');
   };
 
-  return (
+  return(
     <div className="mobile-screen fade-in">
-      <div className="status-bar">
-        <span className="time">9:41</span>
-        <span className="battery">🔋</span>
-      </div>
-
+      <div className="status-bar"><span className="time">9:41</span><span className="battery">🔋</span></div>
       <div className="screen-content">
-        <div className="text-center mb-lg" style={{ paddingTop: '40px' }}>
-          <div
-            style={{
-              background: 'var(--primary-gradient)',
-              width: '72px',
-              height: '72px',
-              borderRadius: '18px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px',
-              boxShadow: '0 6px 16px rgba(255, 125, 30, 0.3)',
-            }}
-          >
-            <span style={{ fontSize: '30px', color: 'white' }}>🔐</span>
-          </div>
-          <h2 className="title">Enter OTP</h2>
-          <p className="subtitle">Sent to +91 {phone}</p>
-        </div>
-
-        <div className="form-group mb-md">
-          <input
-            type="tel"
-            className="otp-input"
-            placeholder="Enter 6-digit code"
-            maxLength="6"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-            style={{
-              width: '100%',
-              textAlign: 'center',
-              fontSize: '20px',
-              letterSpacing: '4px',
-              padding: '12px',
-              border: '1px solid #ccc',
-              borderRadius: '8px',
-            }}
-          />
-        </div>
-
-        <button className="btn btn-primary btn-full btn-large" onClick={verifyOtp}>
-          Verify OTP
-        </button>
-
-        <p
-          style={{
-            fontSize: '12px',
-            color: 'var(--text-secondary)',
-            textAlign: 'center',
-            marginTop: '20px',
-          }}
-        >
-          Didn’t receive the code?{' '}
-          <a href="#" className="link">
-            Resend
-          </a>
-        </p>
+        <h2 className="title text-center mb-lg">OTP for +91 {phone}</h2>
+        <input className="otp-input" maxLength="6" placeholder="------" value={otp} onChange={e=>setOtp(e.target.value)} style={{width:'100%',textAlign:'center',fontSize:24,letterSpacing:4,padding:12,border:'1px solid #ccc',borderRadius:8}}/>
+        <button className="btn btn-primary btn-full btn-large mt-lg" onClick={verify}>Verify</button>
       </div>
     </div>
   );
 }
 
-export default Otp;
+===== FILE: src/pages/VendorProfile.jsx =====
 
+import { useEffect,useState } from 'react';
+import '../styles/common.css'; import '../styles/App.css';
 
-===== FILE: src/pages/ShopList.jsx =====
+export default function VendorProfile(){
+  const [profile,setProfile]=useState(null); const backend=import.meta.env.VITE_BACKEND_URL; const tok=localStorage.getItem('auth_token');
+  useEffect(()=>{fetch(`${backend}/profile/me`,{headers:{Authorization:tok}}).then(r=>r.json()).then(d=>setProfile(d.data));},[]);
+  if(!profile) return <div className="screen-content"><p>Loading...</p></div>;
+  return(<div className="screen-content">
+    <h2 className="title mb-lg">My Profile</h2>
+    <p><b>Name:</b> {profile.name}</p>
+    <p><b>Phone:</b> {profile.phone}</p>
+    <p><b>City:</b> {profile.city}</p>
+    <p><b>Society:</b> {profile.society}</p>
+  </div>);
+}
 
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import '../styles/common.css';
-import '../styles/App.css';
+===== FILE: src/pages/VendorProfileSetup.jsx =====
 
-function ShopList() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [shops, setShops] = useState([]);
-  const [loading, setLoading] = useState(true);
+import { useState } from 'react'; import { useNavigate } from 'react-router-dom';
+import '../styles/common.css'; import '../styles/App.css';
 
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
-  const token = localStorage.getItem('auth_token');
-  const queryParams = new URLSearchParams(location.search);
-  const filterType = queryParams.get('type');
+export default function VendorProfileSetup(){
+  const nav=useNavigate(); const backend=import.meta.env.VITE_BACKEND_URL; const token=localStorage.getItem('auth_token');
+  const [profile,setProfile]=useState({business_name:'',business_type:'',gst_number:'',address:''});
 
-  useEffect(() => {
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-    fetchShops();
-  }, [filterType]);
-
-  const fetchShops = async () => {
-    setLoading(true);
-    try {
-      const url = filterType
-        ? `${backendUrl}/shops?type=${filterType}`
-        : `${backendUrl}/shops`;
-
-      const res = await fetch(url, {
-        headers: { Authorization: token }
-      });
-
-      const data = await res.json();
-
-      if (data.status === 'success') {
-        setShops(data.shops || []);
-      } else {
-        console.warn(data.message || 'Failed to load shops');
-        setShops([]);
-      }
-    } catch (error) {
-      console.error('Error fetching shops:', error);
-      setShops([]);
-    } finally {
-      setLoading(false);
-    }
+  const submit=async()=>{
+    const {business_name,business_type,address}=profile;
+    if(!business_name||!business_type||!address){alert('Fill mandatory');return;}
+    const res=await fetch(`${backend}/vendor/profile`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':token},body:JSON.stringify(profile)});
+    const d=await res.json(); if(d.status==='success') nav('/vendor/create-shop'); else alert(d.message);
   };
 
-  const getTitle = () => {
-    if (!filterType) return 'All Shops';
-    return filterType.charAt(0).toUpperCase() + filterType.slice(1) + ' Shops';
-  };
-
-  return (
-    <div className="screen-content">
-      <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>
-        {getTitle()}
-      </h2>
-
-      {loading ? (
-        <div style={{ textAlign: 'center', marginTop: '40px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '3px solid var(--divider)',
-            borderTop: '3px solid var(--primary-color)',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 20px'
-          }}></div>
-          <p>Loading shops...</p>
-        </div>
-      ) : shops.length === 0 ? (
-        <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
-          No shops found in this category.
-        </p>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {shops.map(shop => (
-            <div
-              key={shop.id}
-              onClick={() => navigate(`/shop/${shop.id}`)}
-              style={{
-                background: 'var(--background-soft)',
-                border: '1px solid var(--divider)',
-                borderRadius: '8px',
-                padding: '16px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px'
-              }}
-            >
-              <div style={{
-                width: '48px',
-                height: '48px',
-                background: 'var(--primary-gradient)',
-                borderRadius: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '20px'
-              }}>
-                🏪
-              </div>
-              <div style={{ flex: 1 }}>
-                <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600' }}>
-                  {shop.shop_name}
-                </h4>
-                <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: 'var(--text-secondary)' }}>
-                  {shop.shop_type} • {shop.description}
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{
-                    fontSize: '12px',
-                    color: shop.is_open ? 'var(--success-color)' : 'var(--error-color)',
-                    fontWeight: '500'
-                  }}>
-                    {shop.is_open ? '• Open' : '• Closed'}
-                  </span>
-                  {shop.delivers && (
-                    <span style={{
-                      fontSize: '12px',
-                      color: 'var(--primary-color)',
-                      fontWeight: '500'
-                    }}>
-                      • Delivers
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>→</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Bottom Padding to avoid overlap */}
-      <div style={{ height: '80px' }}></div>
+  return(
+    <div className="mobile-screen fade-in">
+      <div className="status-bar"><span className="time">9:41</span><span className="battery">🔋</span></div>
+      <div className="screen-content">
+        <h2 className="title text-center mb-lg">Business Profile</h2>
+        {['business_name','business_type','gst_number','address'].map(f=>(
+          <div className="form-group" key={f}>
+            <label className="form-label">{f.replace('_',' ').toUpperCase()}</label>
+            <input className="form-input" value={profile[f]} onChange={e=>setProfile({...profile,[f]:e.target.value})}/>
+          </div>
+        ))}
+        <button className="btn btn-primary btn-full btn-large" onClick={submit}>Save & Continue</button>
+      </div>
     </div>
   );
 }
 
-export default ShopList;
-
-
-===== FILE: src/pages/TitleScreen.jsx =====
+===== FILE: src/pages/VendorTitleScreen.jsx =====
 
 import { useNavigate } from 'react-router-dom';
 import '../styles/common.css';
 import '../styles/App.css';
 
-function TitleScreen() {
+export default function VendorTitleScreen() {
   const navigate = useNavigate();
-
   return (
     <div className="mobile-screen fade-in">
-      <div className="status-bar">
-        <span className="time">9:41</span>
-        <span className="battery">🔋</span>
-      </div>
-
+      <div className="status-bar"><span className="time">9:41</span><span className="battery">🔋</span></div>
       <div className="screen-content text-center">
-        <div
-          className="logo-box"
-          style={{
-            background: 'var(--primary-gradient)',
-            width: '84px',
-            height: '84px',
-            borderRadius: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 24px',
-            boxShadow: '0 6px 14px rgba(255, 125, 30, 0.3)',
-          }}
-        >
-          <span className="logo-icon" style={{ fontSize: '36px', color: '#fff' }}>🏘️</span>
+        <div className="logo-box" style={{background:'var(--primary-gradient)',width:84,height:84,borderRadius:24,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 24px',boxShadow:'0 6px 14px rgba(255,125,30,.3)'}} >
+          <span style={{fontSize:36,color:'#fff'}}>🏪</span>
         </div>
-
-        <h1 className="title mb-xs" style={{ fontSize: '24px' }}>
-          Welcome to Habrio
-        </h1>
-        <p className="subtitle mb-lg" style={{ fontSize: '14px' }}>
-          Your society’s very own super app
-        </p>
-
-        <button
-          className="btn btn-primary btn-full btn-large"
-          style={{ marginBottom: '24px' }}
-          onClick={() => navigate('/login')}
-        >
-          Get Started
-        </button>
-
-        <p
-          className="text-center"
-          style={{
-            fontSize: '12px',
-            color: 'var(--text-tertiary)',
-          }}
-        >
-          Built with ❤️ for your neighbourhood
-        </p>
+        <h1 className="title mb-xs" style={{fontSize:24}}>Welcome Vendor</h1>
+        <p className="subtitle mb-lg" style={{fontSize:14}}>Manage your shop with Habrio</p>
+        <button className="btn btn-primary btn-full btn-large" onClick={()=>navigate('/vendor/login')}>Get Started</button>
+        <p style={{fontSize:12,color:'var(--text-tertiary)'}}>Built with ❤️ for local sellers</p>
       </div>
     </div>
   );
 }
 
-export default TitleScreen;
+===== FILE: src/pages/Wallet.jsx =====
 
+import { useEffect,useState } from 'react'; import { useNavigate } from 'react-router-dom';
+import '../styles/common.css'; import '../styles/App.css';
+
+export default function Wallet(){
+  const [balance,setBalance]=useState(0); const nav=useNavigate();
+  const backend=import.meta.env.VITE_BACKEND_URL; const tok=localStorage.getItem('auth_token');
+  useEffect(()=>{fetch(`${backend}/vendor/wallet`,{headers:{Authorization:tok}}).then(r=>r.json()).then(d=>setBalance(d.balance||0));},[]);
+  return(<div className="screen-content">
+    <h2 style={{fontSize:20,fontWeight:600,marginBottom:16}}>Wallet</h2>
+    <div style={{background:'var(--primary-gradient)',padding:24,borderRadius:12,color:'#fff',marginBottom:24}}>
+      <h3 style={{margin:0,fontSize:28}}>₹{balance.toFixed(2)}</h3><p style={{margin:0,opacity:.9,fontSize:14}}>Current balance</p>
+    </div>
+    <button className="btn btn-primary btn-full mb-md" onClick={()=>nav('/vendor/wallet/history')}>Transaction History →</button>
+    <button className="btn btn-secondary btn-full" onClick={()=>nav('/vendor/wallet/withdraw')}>Withdraw</button>
+  </div>);
+}
+
+===== FILE: src/pages/WalletHistory.jsx =====
+
+import { useEffect,useState } from 'react';
+import '../styles/common.css'; import '../styles/App.css';
+
+export default function WalletHistory(){
+  const [txns,setTxns]=useState([]); const backend=import.meta.env.VITE_BACKEND_URL; const tok=localStorage.getItem('auth_token');
+  useEffect(()=>{fetch(`${backend}/vendor/wallet/history`,{headers:{Authorization:tok}}).then(r=>r.json()).then(d=>setTxns(d.transactions||[]));},[]);
+  return(<div className="screen-content">
+    <h2 className="title mb-lg">Transactions</h2>
+    {txns.length===0?<p>No transactions.</p>:txns.map(t=>(
+      <div key={t.id} style={{border:'1px solid var(--divider)',borderRadius:8,padding:12,marginBottom:12}}>
+        <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}><span>{t.type}</span><span>₹{t.amount}</span></div>
+        <p style={{margin:0,fontSize:12,color:'var(--text-secondary)'}}>{new Date(t.created_at).toLocaleString()}</p>
+        {t.reference&&<p style={{margin:0,fontSize:12,color:'var(--text-secondary)'}}>Ref: {t.reference}</p>}
+      </div>
+    ))}
+  </div>);
+}
 
 ===== FILE: src/router.jsx =====
 
 // src/router.jsx
 import { Routes, Route } from 'react-router-dom';
-import Login from './pages/Login';
-import Home from './pages/Home';
-import TitleScreen from './pages/TitleScreen';
-import Otp from './pages/Otp';
-import BasicOnboarding from './pages/BasicOnboarding';
-import ConsumerOnboarding from './pages/ConsumerOnboarding';
-import ShopList from './pages/ShopList';
+import MobileLayout from './components/MobileLayout';
+import BottomNav from './components/BottomNav';
+
+// Auth & Onboarding (no layout)
+import VendorLogin from './pages/VendorLogin';
+import VendorOtp from './pages/VendorOtp';
+import VendorTitleScreen from './pages/VendorTitleScreen';
+import VendorBasicOnboard from './pages/VendorBasicOnboard';
+import VendorProfileSetup from './pages/VendorProfileSetup';
+import CreateShop from './pages/CreateShop';
+
+// Main App Pages
+import VendorHome from './pages/VendorHome';
+import VendorProfile from './pages/VendorProfile';
+import Items from './pages/Items';
+import AddItem from './pages/AddItem';
+import EditItem from './pages/EditItem';
+import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
+import Support from './pages/Support';
+import Chat from './pages/Chat';
+import Analytics from './pages/Analytics';
+import Wallet from './pages/Wallet';
+import WalletHistory from './pages/WalletHistory';
+
+// Utility layout wrapper with optional bottom nav
+function PageWithLayout({ element, withNav }) {
+  return (
+    <MobileLayout>
+      {element}
+      {withNav && <BottomNav />}
+    </MobileLayout>
+  );
+}
 
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<TitleScreen />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/otp" element={<Otp />} />
-      <Route path="/onboarding/basic" element={<BasicOnboarding />} />
-      <Route path="/onboarding/consumer" element={<ConsumerOnboarding />} />
-      <Route path="/home" element={<Home />} />
-      <Route path="/shops" element={<ShopList />} />
+      {/* Auth & Onboarding Routes (no layout) */}
+      <Route path="/" element={<VendorTitleScreen />} />
+      <Route path="/vendor/login" element={<VendorLogin />} />
+      <Route path="vendor/otp" element={<VendorOtp />} />
+      <Route path="/onboarding/basic" element={<VendorBasicOnboard />} />
+      <Route path="/vendor/profile-setup" element={<VendorProfileSetup />} />
+      <Route path="/vendor/create-shop" element={<CreateShop />} />
+
+      {/* Routes WITH bottom nav */}
+      <Route path="/vendor/home" element={<PageWithLayout element={<VendorHome />} withNav />} />
+      <Route path="/vendor/items" element={<PageWithLayout element={<Items />} withNav />} />
+      <Route path="/vendor/orders" element={<PageWithLayout element={<Orders />} withNav />} />
+      <Route path="/vendor/profile" element={<PageWithLayout element={<VendorProfile />} withNav />} />
+      <Route path="/vendor/wallet" element={<PageWithLayout element={<Wallet />} withNav />} />
+
+      {/* Routes WITHOUT bottom nav */}
+      <Route path="/vendor/items/add" element={<PageWithLayout element={<AddItem />} />} />
+      <Route path="/vendor/items/edit/:itemId" element={<PageWithLayout element={<EditItem />} />} />
+      <Route path="/vendor/order/:orderId" element={<PageWithLayout element={<OrderDetail />} />} />
+      <Route path="/vendor/chat/:orderId" element={<PageWithLayout element={<Chat />} />} />
+      <Route path="/vendor/wallet/history" element={<PageWithLayout element={<WalletHistory />} />} />
+      <Route path="/vendor/analytics" element={<PageWithLayout element={<Analytics />} />} />
+      <Route path="/vendor/support" element={<PageWithLayout element={<Support />} />} />
+
+      {/* Fallback Route */}
+      <Route path="*" element={<PageWithLayout element={<VendorHome />} withNav />} />
     </Routes>
   );
 }
