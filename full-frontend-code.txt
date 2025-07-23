@@ -1,0 +1,1514 @@
+
+===== FILE: src/App.jsx =====
+
+// src/App.jsx
+import { BrowserRouter } from 'react-router-dom';
+import AppRoutes from './router';
+
+// Global styles
+import './styles/reset.css';
+import './styles/variables.css';
+import './styles/common.css';
+import './styles/App.css';
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
+  );
+}
+
+export default App;
+
+
+===== FILE: src/main.jsx =====
+
+// src/main.jsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./styles/reset.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+
+===== FILE: src/pages/BasicOnboarding.jsx =====
+
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import '../styles/common.css';
+import '../styles/App.css';
+
+export default function BasicOnboarding() {
+  const navigate = useNavigate();
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+  const [data, setData] = useState({
+    name: '', city: '', society: ''
+  });
+
+  const handleChange = e => {
+    setData(prev => ({ ...prev, [e.target.name]: e.target.value.trimStart() }));
+  };
+
+  const submit = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      alert('Missing login token. Please login again.');
+      return;
+    }
+
+    const { name, city, society } = data;
+    if (!name || !city || !society) {
+      alert('All fields are required');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${backendUrl}/onboarding/basic`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          city: city.trim(),
+          society: society.trim(),
+          role: 'consumer'
+        })
+      });
+
+      const result = await res.json();
+      if (result.status === 'success') {
+        navigate('/onboarding/consumer');
+      } else {
+        alert(result.message || 'Onboarding failed');
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      alert('Something went wrong. Please try again.');
+    }
+  };
+
+  return (
+    <div className="mobile-screen fade-in">
+      <div className="status-bar">
+        <span className="time">9:41</span>
+        <span className="battery">🔋</span>
+      </div>
+      <div className="screen-content">
+        <h2 className="title text-center mb-lg">Tell us about yourself</h2>
+
+        <div className="form-group">
+          <label className="form-label">Full Name</label>
+          <input
+            name="name"
+            className="form-input"
+            placeholder="Ashish Dabas"
+            value={data.name}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">City</label>
+          <input
+            name="city"
+            className="form-input"
+            placeholder="Noida"
+            value={data.city}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Society</label>
+          <input
+            name="society"
+            className="form-input"
+            placeholder="Hyde Park"
+            value={data.society}
+            onChange={handleChange}
+          />
+        </div>
+
+        <button
+          className="btn btn-primary btn-full btn-large"
+          onClick={submit}
+        >
+          Complete
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+===== FILE: src/pages/ConsumerOnboarding.jsx =====
+
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import '../styles/common.css';
+import '../styles/App.css';
+
+export default function ConsumerOnboarding() {
+  const navigate = useNavigate();
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+  const [flatNumber, setFlatNumber] = useState('');
+
+  const submit = async () => {
+    const token = localStorage.getItem('auth_token');
+    if (!token) return alert('Missing login token. Please login again.');
+
+    if (!flatNumber.trim()) {
+      alert('Please enter your flat or house number');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${backendUrl}/onboarding/consumer`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization':  token
+        },
+        body: JSON.stringify({ flat_number: flatNumber.trim() })
+      });
+
+      const result = await res.json();
+      if (result.status === 'success') {
+        navigate('/home');
+      } else {
+        alert(result.message || 'Consumer onboarding failed');
+      }
+    } catch (err) {
+      console.error('Error submitting consumer onboarding:', err);
+      alert('Something went wrong. Please try again.');
+    }
+  };
+
+  return (
+    <div className="mobile-screen fade-in">
+      <div className="status-bar">
+        <span className="time">9:41</span>
+        <span className="battery">🔋</span>
+      </div>
+      <div className="screen-content">
+        <h2 className="title text-center mb-lg">Your Home Address</h2>
+
+        <div className="form-group">
+          <label className="form-label">Flat / House Number</label>
+          <input
+            className="form-input"
+            placeholder="e.g., A-302"
+            value={flatNumber}
+            onChange={(e) => setFlatNumber(e.target.value.trimStart())}
+          />
+        </div>
+
+        <button
+          className="btn btn-primary btn-full btn-large"
+          onClick={submit}
+        >
+          Complete
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+===== FILE: src/pages/Home.jsx =====
+
+// src/pages/Home.jsx
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import '../styles/common.css';
+import '../styles/App.css';
+
+function Home() {
+  const navigate = useNavigate();
+  const [userProfile, setUserProfile] = useState(null);
+  const [nearbyShops, setNearbyShops] = useState([]);
+  const [featuredShops, setFeaturedShops] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [walletBalance, setWalletBalance] = useState(0);
+
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const token = localStorage.getItem('auth_token');
+
+  useEffect(() => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    fetchUserData();
+    fetchNearbyShops();
+    fetchWalletBalance();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const res = await fetch(`${backendUrl}/profile/me`, {
+        headers: { 'Authorization': token }
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setUserProfile(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
+
+  const fetchNearbyShops = async () => {
+    try {
+      const res = await fetch(`${backendUrl}/shops?status=open`, {
+        headers: { 'Authorization': token }
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setNearbyShops(data.shops.slice(0, 6));
+        setFeaturedShops(data.shops.filter(shop => shop.featured).slice(0, 3));
+      }
+    } catch (error) {
+      console.error('Error fetching shops:', error);
+    }
+    setLoading(false);
+  };
+
+  const fetchWalletBalance = async () => {
+    try {
+      const res = await fetch(`${backendUrl}/wallet`, {
+        headers: { 'Authorization': token }
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setWalletBalance(data.balance);
+      }
+    } catch (error) {
+      console.error('Error fetching wallet:', error);
+    }
+  };
+
+  const shopCategories = [
+    { name: 'Grocery', icon: '🛒', type: 'grocery' },
+    { name: 'Pharmacy', icon: '💊', type: 'pharmacy' },
+    { name: 'Restaurant', icon: '🍽️', type: 'restaurant' },
+    { name: 'Electronics', icon: '📱', type: 'electronics' },
+    { name: 'Fashion', icon: '👕', type: 'fashion' },
+    { name: 'Services', icon: '🔧', type: 'services' }
+  ];
+
+  if (loading) {
+    return (
+      <div className="screen-content">
+        <div style={{ textAlign: 'center', marginTop: '40px' }}>
+          <div style={{ 
+            width: '40px', 
+            height: '40px', 
+            border: '3px solid var(--divider)', 
+            borderTop: '3px solid var(--primary-color)', 
+            borderRadius: '50%', 
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }}></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="screen-content">
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>
+            Hello, {userProfile?.name || 'User'}! 👋
+          </h2>
+          <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)', fontSize: '14px' }}>
+            {userProfile?.society}, {userProfile?.city}
+          </p>
+        </div>
+        <button 
+          onClick={() => navigate('/profile')}
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '20px',
+            background: 'var(--primary-gradient)',
+            border: 'none',
+            color: 'white',
+            fontSize: '18px',
+            cursor: 'pointer'
+          }}
+        >
+          👤
+        </button>
+      </div>
+
+      {/* Wallet Card */}
+      <div 
+        onClick={() => navigate('/wallet')}
+        style={{
+          background: 'var(--primary-gradient)',
+          borderRadius: '12px',
+          padding: '20px',
+          marginBottom: '24px',
+          color: 'white',
+          cursor: 'pointer'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <p style={{ margin: 0, fontSize: '14px', opacity: 0.9 }}>Wallet Balance</p>
+            <h3 style={{ margin: '4px 0 0 0', fontSize: '24px', fontWeight: '600' }}>
+              ₹{walletBalance.toFixed(2)}
+            </h3>
+          </div>
+          <div style={{ fontSize: '24px' }}>💳</div>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div 
+        onClick={() => navigate('/shops/search')}
+        style={{
+          background: 'var(--background-soft)',
+          border: '1px solid var(--divider)',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          marginBottom: '24px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}
+      >
+        <span style={{ fontSize: '16px' }}>🔍</span>
+        <span style={{ color: 'var(--text-secondary)' }}>Search for shops, items...</span>
+      </div>
+
+      {/* Categories */}
+      <div style={{ marginBottom: '24px' }}>
+        <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>Categories</h3>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '12px'
+        }}>
+          {shopCategories.map((category, index) => (
+            <div
+              key={index}
+              onClick={() => navigate(`/shops?type=${category.type}`)}
+              style={{
+                background: 'var(--background-soft)',
+                border: '1px solid var(--divider)',
+                borderRadius: '8px',
+                padding: '16px 8px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>{category.icon}</div>
+              <p style={{ margin: 0, fontSize: '12px', fontWeight: '500' }}>{category.name}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Featured Shops */}
+      {featuredShops.length > 0 && (
+        <div style={{ marginBottom: '24px' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600' }}>Featured Shops</h3>
+          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto' }}>
+            {featuredShops.map((shop) => (
+              <div
+                key={shop.id}
+                onClick={() => navigate(`/shop/${shop.id}`)}
+                style={{
+                  background: 'var(--background-soft)',
+                  border: '1px solid var(--divider)',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  minWidth: '140px',
+                  cursor: 'pointer'
+                }}
+              >
+                <div style={{ 
+                  width: '40px', 
+                  height: '40px', 
+                  background: 'var(--primary-gradient)', 
+                  borderRadius: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '8px',
+                  fontSize: '18px'
+                }}>
+                  🏪
+                </div>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '600' }}>
+                  {shop.shop_name}
+                </h4>
+                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  {shop.shop_type}
+                </p>
+                <div style={{ 
+                  marginTop: '8px', 
+                  fontSize: '10px', 
+                  color: 'var(--success-color)',
+                  fontWeight: '500'
+                }}>
+                  {shop.is_open ? '• Open' : '• Closed'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Nearby Shops */}
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>Nearby Shops</h3>
+          <button 
+            onClick={() => navigate('/shops')}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--primary-color)',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
+          >
+            View All
+          </button>
+        </div>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {nearbyShops.map((shop) => (
+            <div
+              key={shop.id}
+              onClick={() => navigate(`/shop/${shop.id}`)}
+              style={{
+                background: 'var(--background-soft)',
+                border: '1px solid var(--divider)',
+                borderRadius: '8px',
+                padding: '16px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}
+            >
+              <div style={{ 
+                width: '48px', 
+                height: '48px', 
+                background: 'var(--primary-gradient)', 
+                borderRadius: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '20px'
+              }}>
+                🏪
+              </div>
+              <div style={{ flex: 1 }}>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600' }}>
+                  {shop.shop_name}
+                </h4>
+                <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: 'var(--text-secondary)' }}>
+                  {shop.shop_type} • {shop.description}
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ 
+                    fontSize: '12px', 
+                    color: shop.is_open ? 'var(--success-color)' : 'var(--error-color)',
+                    fontWeight: '500'
+                  }}>
+                    {shop.is_open ? '• Open' : '• Closed'}
+                  </span>
+                  {shop.delivers && (
+                    <span style={{ 
+                      fontSize: '12px', 
+                      color: 'var(--primary-color)',
+                      fontWeight: '500'
+                    }}>
+                      • Delivers
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>→</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom Navigation Placeholder */}
+      <div style={{ height: '80px' }}></div>
+
+      {/* Bottom Navigation */}
+      <div style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background: 'white',
+        borderTop: '1px solid var(--divider)',
+        display: 'flex',
+        justifyContent: 'space-around',
+        padding: '12px 0',
+        zIndex: 1000
+      }}>
+        <button 
+          onClick={() => navigate('/home')}
+          style={{
+            background: 'none',
+            border: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            color: 'var(--primary-color)',
+            fontSize: '12px',
+            cursor: 'pointer'
+          }}
+        >
+          <span style={{ fontSize: '20px' }}>🏠</span>
+          Home
+        </button>
+        <button 
+          onClick={() => navigate('/shops')}
+          style={{
+            background: 'none',
+            border: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            color: 'var(--text-secondary)',
+            fontSize: '12px',
+            cursor: 'pointer'
+          }}
+        >
+          <span style={{ fontSize: '20px' }}>🏪</span>
+          Shops
+        </button>
+        <button 
+          onClick={() => navigate('/cart')}
+          style={{
+            background: 'none',
+            border: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            color: 'var(--text-secondary)',
+            fontSize: '12px',
+            cursor: 'pointer'
+          }}
+        >
+          <span style={{ fontSize: '20px' }}>🛒</span>
+          Cart
+        </button>
+        <button 
+          onClick={() => navigate('/orders')}
+          style={{
+            background: 'none',
+            border: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            color: 'var(--text-secondary)',
+            fontSize: '12px',
+            cursor: 'pointer'
+          }}
+        >
+          <span style={{ fontSize: '20px' }}>📦</span>
+          Orders
+        </button>
+        <button 
+          onClick={() => navigate('/profile')}
+          style={{
+            background: 'none',
+            border: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px',
+            color: 'var(--text-secondary)',
+            fontSize: '12px',
+            cursor: 'pointer'
+          }}
+        >
+          <span style={{ fontSize: '20px' }}>👤</span>
+          Profile
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default Home;
+
+===== FILE: src/pages/Login.jsx =====
+
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import '../styles/common.css';
+import '../styles/App.css';
+
+function Login() {
+  const [phone, setPhone] = useState('');
+  const navigate = useNavigate();
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+  const sendOtp = async () => {
+    if (!/^\d{10}$/.test(phone)) {
+      alert('Please enter a valid 10-digit phone number');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${backendUrl}/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: '+91' + phone }),
+      });
+
+      const data = await res.json();
+      if (data.status === 'success') {
+        navigate('/otp', { state: { phone } });
+      } else {
+        alert('❌ ' + (data.message || 'Failed to send OTP'));
+      }
+    } catch (error) {
+      alert('Something went wrong while sending OTP');
+    }
+  };
+
+  return (
+    <div className="mobile-screen fade-in">
+      <div className="status-bar">
+        <span className="time">9:41</span>
+        <span className="battery">🔋</span>
+      </div>
+
+      <div className="screen-content">
+        <div className="text-center mb-lg" style={{ paddingTop: '48px' }}>
+          <div
+            style={{
+              background: 'var(--primary-gradient)',
+              width: '80px',
+              height: '80px',
+              borderRadius: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 24px',
+              boxShadow: '0 8px 18px rgba(255, 145, 0, 0.35)',
+            }}
+          >
+            <span style={{ fontSize: '36px', color: 'white' }}>📲</span>
+          </div>
+
+          <h2 className="title" style={{ fontSize: '22px' }}>Log in to Habrio</h2>
+          <p className="subtitle">Enter your mobile number to continue</p>
+        </div>
+
+        <div className="form-group mb-md">
+          <div className="phone-input-group">
+            <div className="country-code">+91</div>
+            <input
+              type="tel"
+              className="phone-input"
+              placeholder="9876543210"
+              maxLength="10"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <button className="btn btn-primary btn-full btn-large" onClick={sendOtp}>
+          Send OTP
+        </button>
+
+        <p
+          style={{
+            fontSize: '12px',
+            color: 'var(--text-secondary)',
+            textAlign: 'center',
+            lineHeight: '1.5',
+            marginTop: '24px',
+          }}
+        >
+          By continuing, you agree to our{' '}
+          <a href="#" className="link">Terms & Conditions</a> and{' '}
+          <a href="#" className="link">Privacy Policy</a>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default Login;
+
+
+===== FILE: src/pages/Otp.jsx =====
+
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import '../styles/common.css';
+import '../styles/App.css';
+
+function Otp() {
+  const [otp, setOtp] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const phone = location.state?.phone || '9876543210';
+
+  const verifyOtp = async () => {
+    if (!/^\d{6}$/.test(otp)) {
+      alert('Enter a valid 6-digit OTP');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${backendUrl}/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: '+91' + phone, otp }),
+      });
+
+      const data = await res.json();
+
+      if (data.status === 'success' && data.auth_token) {
+        localStorage.setItem('auth_token', data.auth_token);
+
+        // Use basic_onboarding_done directly from response
+        if (data.basic_onboarding_done) {
+          navigate('/home');
+        } else {
+          navigate('/onboarding/basic');
+        }
+      } else {
+        alert('❌ ' + (data.message || 'Incorrect OTP'));
+      }
+    } catch (error) {
+      alert('Something went wrong while verifying OTP');
+      console.error(error);
+    }
+  };
+
+  return (
+    <div className="mobile-screen fade-in">
+      <div className="status-bar">
+        <span className="time">9:41</span>
+        <span className="battery">🔋</span>
+      </div>
+
+      <div className="screen-content">
+        <div className="text-center mb-lg" style={{ paddingTop: '40px' }}>
+          <div
+            style={{
+              background: 'var(--primary-gradient)',
+              width: '72px',
+              height: '72px',
+              borderRadius: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px',
+              boxShadow: '0 6px 16px rgba(255, 125, 30, 0.3)',
+            }}
+          >
+            <span style={{ fontSize: '30px', color: 'white' }}>🔐</span>
+          </div>
+          <h2 className="title">Enter OTP</h2>
+          <p className="subtitle">Sent to +91 {phone}</p>
+        </div>
+
+        <div className="form-group mb-md">
+          <input
+            type="tel"
+            className="otp-input"
+            placeholder="Enter 6-digit code"
+            maxLength="6"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            style={{
+              width: '100%',
+              textAlign: 'center',
+              fontSize: '20px',
+              letterSpacing: '4px',
+              padding: '12px',
+              border: '1px solid #ccc',
+              borderRadius: '8px',
+            }}
+          />
+        </div>
+
+        <button className="btn btn-primary btn-full btn-large" onClick={verifyOtp}>
+          Verify OTP
+        </button>
+
+        <p
+          style={{
+            fontSize: '12px',
+            color: 'var(--text-secondary)',
+            textAlign: 'center',
+            marginTop: '20px',
+          }}
+        >
+          Didn’t receive the code?{' '}
+          <a href="#" className="link">
+            Resend
+          </a>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default Otp;
+
+
+===== FILE: src/pages/ShopList.jsx =====
+
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import '../styles/common.css';
+import '../styles/App.css';
+
+function ShopList() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [shops, setShops] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const token = localStorage.getItem('auth_token');
+  const queryParams = new URLSearchParams(location.search);
+  const filterType = queryParams.get('type');
+
+  useEffect(() => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    fetchShops();
+  }, [filterType]);
+
+  const fetchShops = async () => {
+    setLoading(true);
+    try {
+      const url = filterType
+        ? `${backendUrl}/shops?type=${filterType}`
+        : `${backendUrl}/shops`;
+
+      const res = await fetch(url, {
+        headers: { Authorization: token }
+      });
+
+      const data = await res.json();
+
+      if (data.status === 'success') {
+        setShops(data.shops || []);
+      } else {
+        console.warn(data.message || 'Failed to load shops');
+        setShops([]);
+      }
+    } catch (error) {
+      console.error('Error fetching shops:', error);
+      setShops([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTitle = () => {
+    if (!filterType) return 'All Shops';
+    return filterType.charAt(0).toUpperCase() + filterType.slice(1) + ' Shops';
+  };
+
+  return (
+    <div className="screen-content">
+      <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '16px' }}>
+        {getTitle()}
+      </h2>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', marginTop: '40px' }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            border: '3px solid var(--divider)',
+            borderTop: '3px solid var(--primary-color)',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 20px'
+          }}></div>
+          <p>Loading shops...</p>
+        </div>
+      ) : shops.length === 0 ? (
+        <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+          No shops found in this category.
+        </p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {shops.map(shop => (
+            <div
+              key={shop.id}
+              onClick={() => navigate(`/shop/${shop.id}`)}
+              style={{
+                background: 'var(--background-soft)',
+                border: '1px solid var(--divider)',
+                borderRadius: '8px',
+                padding: '16px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}
+            >
+              <div style={{
+                width: '48px',
+                height: '48px',
+                background: 'var(--primary-gradient)',
+                borderRadius: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '20px'
+              }}>
+                🏪
+              </div>
+              <div style={{ flex: 1 }}>
+                <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: '600' }}>
+                  {shop.shop_name}
+                </h4>
+                <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: 'var(--text-secondary)' }}>
+                  {shop.shop_type} • {shop.description}
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{
+                    fontSize: '12px',
+                    color: shop.is_open ? 'var(--success-color)' : 'var(--error-color)',
+                    fontWeight: '500'
+                  }}>
+                    {shop.is_open ? '• Open' : '• Closed'}
+                  </span>
+                  {shop.delivers && (
+                    <span style={{
+                      fontSize: '12px',
+                      color: 'var(--primary-color)',
+                      fontWeight: '500'
+                    }}>
+                      • Delivers
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div style={{ fontSize: '16px', color: 'var(--text-secondary)' }}>→</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Bottom Padding to avoid overlap */}
+      <div style={{ height: '80px' }}></div>
+    </div>
+  );
+}
+
+export default ShopList;
+
+
+===== FILE: src/pages/TitleScreen.jsx =====
+
+import { useNavigate } from 'react-router-dom';
+import '../styles/common.css';
+import '../styles/App.css';
+
+function TitleScreen() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="mobile-screen fade-in">
+      <div className="status-bar">
+        <span className="time">9:41</span>
+        <span className="battery">🔋</span>
+      </div>
+
+      <div className="screen-content text-center">
+        <div
+          className="logo-box"
+          style={{
+            background: 'var(--primary-gradient)',
+            width: '84px',
+            height: '84px',
+            borderRadius: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 24px',
+            boxShadow: '0 6px 14px rgba(255, 125, 30, 0.3)',
+          }}
+        >
+          <span className="logo-icon" style={{ fontSize: '36px', color: '#fff' }}>🏘️</span>
+        </div>
+
+        <h1 className="title mb-xs" style={{ fontSize: '24px' }}>
+          Welcome to Habrio
+        </h1>
+        <p className="subtitle mb-lg" style={{ fontSize: '14px' }}>
+          Your society’s very own super app
+        </p>
+
+        <button
+          className="btn btn-primary btn-full btn-large"
+          style={{ marginBottom: '24px' }}
+          onClick={() => navigate('/login')}
+        >
+          Get Started
+        </button>
+
+        <p
+          className="text-center"
+          style={{
+            fontSize: '12px',
+            color: 'var(--text-tertiary)',
+          }}
+        >
+          Built with ❤️ for your neighbourhood
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default TitleScreen;
+
+
+===== FILE: src/router.jsx =====
+
+// src/router.jsx
+import { Routes, Route } from 'react-router-dom';
+import Login from './pages/Login';
+import Home from './pages/Home';
+import TitleScreen from './pages/TitleScreen';
+import Otp from './pages/Otp';
+import BasicOnboarding from './pages/BasicOnboarding';
+import ConsumerOnboarding from './pages/ConsumerOnboarding';
+import ShopList from './pages/ShopList';
+
+export default function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<TitleScreen />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/otp" element={<Otp />} />
+      <Route path="/onboarding/basic" element={<BasicOnboarding />} />
+      <Route path="/onboarding/consumer" element={<ConsumerOnboarding />} />
+      <Route path="/home" element={<Home />} />
+      <Route path="/shops" element={<ShopList />} />
+    </Routes>
+  );
+}
+
+
+===== FILE: src/styles/App.css =====
+
+/* Root styles */
+body {
+  background-color: var(--background);
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Mobile screen container */
+.mobile-screen {
+  width: 100%;
+  max-width: 375px;
+  min-height: 100vh;
+  background-color: var(--background);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Optional container inside screen (status + content) */
+.screen-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Page entrance animation */
+.fade-in {
+  animation: fadeIn 0.4s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Common layout fixes */
+.full-width {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.full-height {
+  height: 100%;
+}
+
+.centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Utility spacing */
+.mt-xxs { margin-top: 4px; }
+.mt-xs  { margin-top: 8px; }
+.mt-sm  { margin-top: 12px; }
+.mt-md  { margin-top: 16px; }
+.mt-lg  { margin-top: 24px; }
+.mt-xl  { margin-top: 32px; }
+
+.mb-xxs { margin-bottom: 4px; }
+.mb-xs  { margin-bottom: 8px; }
+.mb-sm  { margin-bottom: 12px; }
+.mb-md  { margin-bottom: 16px; }
+.mb-lg  { margin-bottom: 24px; }
+.mb-xl  { margin-bottom: 32px; }
+
+
+===== FILE: src/styles/common.css =====
+
+/* src/styles/common.css */
+
+/* === Screen Layout === */
+.screen-content {
+  padding: var(--space-lg);
+  background-color: var(--background);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.full-screen {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* === Typography === */
+.title {
+  font-size: var(--font-title);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.subtitle {
+  font-size: var(--font-body);
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+
+/* === Buttons === */
+.btn {
+  height: var(--btn-height);
+  border-radius: var(--border-radius);
+  padding: 0 var(--space-md);
+  font-size: var(--font-body);
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+}
+
+.btn-primary {
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover {
+  opacity: 0.95;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.btn-large {
+  font-size: 16px;
+}
+
+/* === Input Fields === */
+.phone-input-group {
+  display: flex;
+  align-items: center;
+  background-color: var(--background-soft);
+  border: 1px solid var(--divider);
+  border-radius: var(--border-radius);
+  padding: 0 var(--space-sm);
+  height: var(--btn-height);
+  margin-bottom: var(--space-md);
+}
+
+.phone-input-group .country-code {
+  font-size: 14px;
+  margin-right: var(--space-xs);
+  color: var(--text-secondary);
+}
+
+.phone-input-group input {
+  border: none;
+  background: transparent;
+  flex: 1;
+  font-size: var(--font-body);
+  color: var(--text-primary);
+}
+
+/* === OTP Input === */
+.otp-input {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+  border: 1px solid var(--divider);
+  border-radius: var(--border-radius);
+  background-color: var(--background-soft);
+  margin-right: var(--space-sm);
+}
+
+/* Full-width OTP input (for single box input) */
+.otp-full-input {
+  width: 100%;
+  height: 56px;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--divider);
+  border-radius: var(--border-radius);
+  background-color: var(--background-soft);
+  letter-spacing: 6px;
+  padding: 0 var(--space-sm);
+  box-sizing: border-box;
+  margin-bottom: var(--space-md);
+}
+
+/* === Status Bar (Top UI) === */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: var(--space-sm) var(--space-md);
+}
+
+/* === Text & Spacing Utilities === */
+.text-center {
+  text-align: center;
+}
+
+.mb-lg {
+  margin-bottom: var(--space-lg);
+}
+
+.mb-md {
+  margin-bottom: var(--space-md);
+}
+
+.mt-md {
+  margin-top: var(--space-md);
+}
+
+/* === Misc === */
+a.link {
+  color: var(--primary-color);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* Fixes for TitleScreen */
+
+.no-padding {
+  padding: 0 !important;
+}
+
+.logo-box {
+  background: var(--primary-gradient);
+  width: 100px;
+  height: 100px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 48px auto 28px;
+  box-shadow: 0 10px 24px rgba(90, 79, 255, 0.25);
+}
+
+.logo-icon {
+  font-size: 44px;
+  color: white;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-size: var(--font-body);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.form-input {
+  width: 100%;
+  padding: var(--space-sm);
+  font-size: var(--font-body);
+  border: 1px solid var(--divider);
+  border-radius: var(--border-radius);
+  background-color: var(--background-soft);
+  margin-bottom: var(--space-md);
+}
+
+
+===== FILE: src/styles/reset.css =====
+
+/* src/styles/reset.css */
+
+/* Import fonts and variables */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import './variables.css';
+
+/* Reset default browser styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: var(--font-family);
+}
+
+html, body {
+  height: 100%;
+  background-color: var(--background);
+  color: var(--text-primary);
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+input, button, textarea, select {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Remove arrows from number inputs on mobile/Chrome */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+===== FILE: src/styles/variables.css =====
+
+/* src/styles/variables.css */
+
+:root {
+  /* === COLORS === */
+  --primary-color: #FC644F;
+  --primary-color-dark: #E35645;
+  --primary-gradient: linear-gradient(135deg, #FC644F, #E35645);
+  --accent-color: #00C775;
+
+  --background: #FFFFFF;
+  --background-soft: #F9FAFB;
+  --divider: #E5E7EB;
+
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-disabled: #D1D5DB;
+
+  /* === TYPOGRAPHY === */
+  --font-display: 28px;
+  --font-title: 20px;
+  --font-subtitle: 16px;
+  --font-body: 14px;
+  --font-caption: 12px;
+
+  --font-family: 'Inter', 'SF Pro Text', 'Roboto', sans-serif;
+
+  /* === SPACING === */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* === COMPONENT === */
+  --border-radius: 12px;
+  --btn-height: 44px;
+  --transition-speed: 0.2s ease;
+}
+
