@@ -1,0 +1,39 @@
+/* src/styles/variables.css */
+
+:root {
+  /* === COLORS === */
+  --primary-color: #FC644F;
+  --primary-color-dark: #E35645;
+  --primary-gradient: linear-gradient(135deg, #FC644F, #E35645);
+  --accent-color: #00C775;
+
+  --background: #FFFFFF;
+  --background-soft: #F9FAFB;
+  --divider: #E5E7EB;
+
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-disabled: #D1D5DB;
+
+  /* === TYPOGRAPHY === */
+  --font-display: 28px;
+  --font-title: 20px;
+  --font-subtitle: 16px;
+  --font-body: 14px;
+  --font-caption: 12px;
+
+  --font-family: 'Inter', 'SF Pro Text', 'Roboto', sans-serif;
+
+  /* === SPACING === */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+
+  /* === COMPONENT === */
+  --border-radius: 12px;
+  --btn-height: 44px;
+  --transition-speed: 0.2s ease;
+}

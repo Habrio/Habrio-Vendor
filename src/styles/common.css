@@ -1,0 +1,191 @@
+/* src/styles/common.css */
+
+/* === Screen Layout === */
+.screen-content {
+  padding: var(--space-lg);
+  background-color: var(--background);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.full-screen {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* === Typography === */
+.title {
+  font-size: var(--font-title);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.subtitle {
+  font-size: var(--font-body);
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+
+/* === Buttons === */
+.btn {
+  height: var(--btn-height);
+  border-radius: var(--border-radius);
+  padding: 0 var(--space-md);
+  font-size: var(--font-body);
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-speed);
+}
+
+.btn-primary {
+  background: var(--primary-gradient);
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover {
+  opacity: 0.95;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+.btn-large {
+  font-size: 16px;
+}
+
+/* === Input Fields === */
+.phone-input-group {
+  display: flex;
+  align-items: center;
+  background-color: var(--background-soft);
+  border: 1px solid var(--divider);
+  border-radius: var(--border-radius);
+  padding: 0 var(--space-sm);
+  height: var(--btn-height);
+  margin-bottom: var(--space-md);
+}
+
+.phone-input-group .country-code {
+  font-size: 14px;
+  margin-right: var(--space-xs);
+  color: var(--text-secondary);
+}
+
+.phone-input-group input {
+  border: none;
+  background: transparent;
+  flex: 1;
+  font-size: var(--font-body);
+  color: var(--text-primary);
+}
+
+/* === OTP Input === */
+.otp-input {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+  border: 1px solid var(--divider);
+  border-radius: var(--border-radius);
+  background-color: var(--background-soft);
+  margin-right: var(--space-sm);
+}
+
+/* Full-width OTP input (for single box input) */
+.otp-full-input {
+  width: 100%;
+  height: 56px;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--divider);
+  border-radius: var(--border-radius);
+  background-color: var(--background-soft);
+  letter-spacing: 6px;
+  padding: 0 var(--space-sm);
+  box-sizing: border-box;
+  margin-bottom: var(--space-md);
+}
+
+/* === Status Bar (Top UI) === */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: var(--space-sm) var(--space-md);
+}
+
+/* === Text & Spacing Utilities === */
+.text-center {
+  text-align: center;
+}
+
+.mb-lg {
+  margin-bottom: var(--space-lg);
+}
+
+.mb-md {
+  margin-bottom: var(--space-md);
+}
+
+.mt-md {
+  margin-top: var(--space-md);
+}
+
+/* === Misc === */
+a.link {
+  color: var(--primary-color);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* Fixes for TitleScreen */
+
+.no-padding {
+  padding: 0 !important;
+}
+
+.logo-box {
+  background: var(--primary-gradient);
+  width: 100px;
+  height: 100px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 48px auto 28px;
+  box-shadow: 0 10px 24px rgba(90, 79, 255, 0.25);
+}
+
+.logo-icon {
+  font-size: 44px;
+  color: white;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-size: var(--font-body);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.form-input {
+  width: 100%;
+  padding: var(--space-sm);
+  font-size: var(--font-body);
+  border: 1px solid var(--divider);
+  border-radius: var(--border-radius);
+  background-color: var(--background-soft);
+  margin-bottom: var(--space-md);
+}

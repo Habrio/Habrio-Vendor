@@ -1,0 +1,82 @@
+/* Root styles */
+body {
+  background-color: var(--background);
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-primary);
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Mobile screen container */
+.mobile-screen {
+  width: 100%;
+  max-width: 375px;
+  min-height: 100vh;
+  background-color: var(--background);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Optional container inside screen (status + content) */
+.screen-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Page entrance animation */
+.fade-in {
+  animation: fadeIn 0.4s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Common layout fixes */
+.full-width {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.full-height {
+  height: 100%;
+}
+
+.centered {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Utility spacing */
+.mt-xxs { margin-top: 4px; }
+.mt-xs  { margin-top: 8px; }
+.mt-sm  { margin-top: 12px; }
+.mt-md  { margin-top: 16px; }
+.mt-lg  { margin-top: 24px; }
+.mt-xl  { margin-top: 32px; }
+
+.mb-xxs { margin-bottom: 4px; }
+.mb-xs  { margin-bottom: 8px; }
+.mb-sm  { margin-bottom: 12px; }
+.mb-md  { margin-bottom: 16px; }
+.mb-lg  { margin-bottom: 24px; }
+.mb-xl  { margin-bottom: 32px; }
